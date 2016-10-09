@@ -19,6 +19,7 @@ type SheetTable struct {
 	headerRow int
 	sServ     *sheets.Service
 	Resp      [][]interface{}
+	RespData  [][]string
 }
 
 // Header is a model of any header and where it is on the sheet
@@ -89,4 +90,46 @@ func (st *SheetTable) LoadData() {
 		fmt.Print("No data found.")
 	}
 
+}
+
+// ConvertRespValues is used to convert []interface{} to []string
+func (st *SheetTable) ConvertRespValues() {
+	rv := st.Resp
+	converted := make([][]string, len(rv))
+	for i := range converted {
+		converted[i] = make([]string, len(rv[0]))
+	}
+	for i, valSlice := range rv {
+		for j, cell := range valSlice {
+			converted[i][j] = fmt.Sprint(cell)
+		}
+	}
+	st.RespData = converted
+}
+
+func convertRespValuesTest(rv [][]interface{}) [][]string {
+	converted := make([][]string, len(rv))
+	var wgBuild sync.WaitGroup
+	var wgWrite sync.WaitGroup
+	for pos := range converted {
+		wgBuild.Add(1)
+		go func(pos int) {
+			converted[pos] = make([]string, len(rv[0]))
+			wgBuild.Done()
+		}(pos)
+	}
+	wgBuild.Wait()
+	for i, valSlice := range rv {
+		wgWrite.Add(1)
+		go func(row int, vals []interface{}) {
+			for j, cell := range vals {
+				go func(col int, data interface{}) {
+					converted[row][col] = fmt.Sprint(data)
+					wgWrite.Done()
+				}(j, cell)
+			}
+		}(i, valSlice)
+	}
+	wgWrite.Wait()
+	return converted
 }

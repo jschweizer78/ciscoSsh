@@ -11,7 +11,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
-	"sync"
+	// "sync"
 
 	"github.com/jschweizer78/ciscoSsh/models"
 	"golang.org/x/net/context"
@@ -134,7 +134,7 @@ func main() {
 		for {
 			logMsg := <-as.channels.LogChan
 			path := filepath.Join(as.Dir, "log.txt")
-			file, err := os.OpenFile(path, os.O_APPEND, 0660)
+			file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE, 0660)
 			checkErr("Error opening log file", err)
 			defer file.Close()
 
@@ -153,16 +153,28 @@ func main() {
 	// fmt.Println(parents)
 
 	sSheet := models.NewSheetTable(sheetSrv)
-	as.st = &sSheet
 	sSheet.SetDataLocation(as.SpreadsheetID, as.Site, as.DataRange, as.OffSet)
 	fmt.Println(as.DataRange)
-	// sSheet.LoadData()
-
-	var wgWrite sync.WaitGroup
+	sSheet.LoadData()
+	sSheet.ConvertRespValues()
+	as.St = &sSheet
+	// var wgWrite sync.WaitGroup
 	go func() {
 		// TODO get a list of device types and print to channel
-
-		// as.channels.PrintChan <- dt
+		data := as.St.RespData
+		pos := findDevTypeHeader(data)
+		devsAll := make([]string, len(data))
+		for i, item := range data {
+			if i == 0 {
+				continue
+			}
+			devsAll = append(devsAll,item[pos])
+			devTypes := removeDuplicates(devsAll)
+			for _, dt := range devTypes {
+				as.channels.PrintChan <- dt
+			}
+			as.channels.DoneChan <- true
+		}
 	}()
 	go func() {
 		for {
@@ -185,7 +197,7 @@ func main() {
 
 	<-as.channels.DoneChan
 	fmt.Println("Done requesting file to be written")
-	wgWrite.Wait()
+	// wgWrite.Wait()
 	fmt.Println("Done writting files")
 	fmt.Println("Did it work?")
 

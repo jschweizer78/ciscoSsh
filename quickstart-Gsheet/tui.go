@@ -23,7 +23,7 @@ type AppConfig struct {
 	PubKey        string `json:"pubKey,omitempty"`
 	PrivateKey    string `json:"privateKey,omitempty"`
 	channels      *SyncStruct
-	st            *models.SheetTable
+	St            *models.SheetTable
 }
 
 func getAppConfig(mode string, sync *SyncStruct) *AppConfig {

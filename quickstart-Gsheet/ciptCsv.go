@@ -17,7 +17,7 @@ func ciptData() {
 
 func writeCsvFileFromRespValues(devType string, ac *AppConfig, wg sync.WaitGroup) {
 	// TODO Need to find device type header and remove column from datSet
-	data := convertRespValues(ac.st.Resp)
+	data := ac.St.RespData
 	data = removeDevHeaderFromData(data)
 	switch devType {
 	case "CTI Port", "Jabber", "Cisco 8831", "Analog":
@@ -28,19 +28,6 @@ func writeCsvFileFromRespValues(devType string, ac *AppConfig, wg sync.WaitGroup
 		ac.channels.LogChan <- fmt.Sprintf("Unknown device type:%s", devType)
 	}
 
-}
-
-func convertRespValues(rv [][]interface{}) [][]string {
-	converted := make([][]string, len(rv))
-	for i := range converted {
-		converted[i] = make([]string, len(rv[0]))
-	}
-	for i, valSlice := range rv {
-		for j, cell := range valSlice {
-			converted[i][j] = fmt.Sprint(cell)
-		}
-	}
-	return converted
 }
 
 func filterDeviceFromData(dt string, data [][]string) [][]string {
@@ -63,29 +50,21 @@ func removeDevHeaderFromData(data [][]string) [][]string {
 	return data
 }
 
-func convertRespValuesTest(rv [][]interface{}) [][]string {
-	converted := make([][]string, len(rv))
-	var wgBuild sync.WaitGroup
-	var wgWrite sync.WaitGroup
-	for pos := range converted {
-		wgBuild.Add(1)
-		go func(pos int) {
-			converted[pos] = make([]string, len(rv[0]))
-			wgBuild.Done()
-		}(pos)
+func removeDuplicates(elements []string) []string {
+    // Use map to record duplicates as we find them.
+    encountered := make(map[string]bool{}, 10)
+    result := make([]string, 10)
+
+    for v := range elements {
+	if encountered[elements[v]] == true {
+	    // Do not add duplicate.
+	} else {
+	    // Record this element as an encountered element.
+	    encountered[elements[v]] = true
+	    // Append to result slice.
+	    result = append(result, elements[v])
 	}
-	wgBuild.Wait()
-	for i, valSlice := range rv {
-		wgWrite.Add(1)
-		go func(row int, vals []interface{}) {
-			for j, cell := range vals {
-				go func(col int, data interface{}) {
-					converted[row][col] = fmt.Sprint(data)
-					wgWrite.Done()
-				}(j, cell)
-			}
-		}(i, valSlice)
-	}
-	wgWrite.Wait()
-	return converted
+    }
+    // Return the new slice.
+    return result
 }

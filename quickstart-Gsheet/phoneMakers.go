@@ -25,7 +25,7 @@ func makeCTIPortCsv(data [][]string, wg sync.WaitGroup) {
 	csvChan := make(chan []string, 10)
 	// go readDataToChan(data, csvChan)
 	go writeChanToFile(data, csvChan, wg)
-	// TODO convert CIPT headers to CUCM and add needed
+	// TODO convert CIPT headers to CUCM and add needed headers
 }
 
 func makeJabberCSFCsv(data [][]string, wg sync.WaitGroup) {
@@ -101,5 +101,14 @@ func isUsedInFormulas(header string) bool {
 		return true
 	default:
 		return false
+	}
+}
+
+func findDevTypeHeader(data [][]string) int {
+	for i, header := range data[0] {
+		if header == `Device Type` {
+			return i
+		}
+		return -1
 	}
 }

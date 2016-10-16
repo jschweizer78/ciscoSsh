@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -11,6 +10,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+
 	// "sync"
 
 	"github.com/jschweizer78/ciscoSsh/models"
@@ -18,9 +18,13 @@ import (
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	// "google.golang.org/api/drive/v2"
+	"github.com/jschweizer78/ciscoSsh/resource"
+	"github.com/jschweizer78/ciscoSsh/storage/tiedot"
 	"google.golang.org/api/drive/v2"
 	"google.golang.org/api/sheets/v4"
 )
+
+var dataReadyChanName = `DATA IS READY`
 
 // getClient uses a Context and Config to retrieve a Token
 // then generate a Client. It returns the generated Client.
@@ -113,9 +117,9 @@ func main() {
 	client := getClient(ctx, config)
 
 	// driveSrv, err := drive.New(client)
-	if err != nil {
-		log.Fatalf("Unable to retrieve drive Client %v", err)
-	}
+	// if err != nil {
+	// 	log.Fatalf("Unable to retrieve drive Client %v", err)
+	// }
 	// TODO Make TUI to get values
 	var mode string
 	fmt.Println("Would you like demo mode y/n")
@@ -123,83 +127,35 @@ func main() {
 
 	sheetSrv, err := sheets.New(client)
 	checkErr("Unable to retrieve Sheets Client", err)
-	var syncStruct SyncStruct
-	syncStruct.DoneChan = make(chan bool, 5)
-	syncStruct.PrintChan = make(chan string, 5)
-	syncStruct.LogChan = make(chan string, 10)
-	as := getAppConfig(mode, &syncStruct)
-	// readRange := fmt.Sprint(site, "!", dataRange)
-
-	go func() {
-		for {
-			logMsg := <-as.channels.LogChan
-			path := filepath.Join(as.Dir, "log.txt")
-			file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE, 0660)
-			checkErr("Error opening log file", err)
-			defer file.Close()
-
-			writer := bufio.NewWriter(file)
-			log := fmt.Sprintf("%s\n", logMsg)
-
-			_, err = writer.WriteString(log)
-			checkErr("Couldn't write to log file", err)
-		}
-	}()
+	syncer := newSyscStruct()
+	as := getAppConfig(mode, syncer)
+	// as.wgs[`wfDATA`]
 
 	// TODO Just playing aroung
 	// fileCall := driveSrv.Files.Get(spreadsheetID)
 	// parents, err := fileCall.Fields("parents").Do()
 	// checkErr("Problem with call", err)
 	// fmt.Println(parents)
-
+	myDbName := "MyDatabase"
+	myDB := tiedot.NewStorageDB(filepath.Join(as.Dir, myDbName))
+	// userStor := tiedot.NewUserStorage(myDB)
 	sSheet := models.NewSheetTable(sheetSrv)
 	sSheet.SetDataLocation(as.SpreadsheetID, as.Site, as.DataRange, as.OffSet)
 	fmt.Println(as.DataRange)
-	sSheet.LoadData()
+	// sSheet.LoadData()
 	sSheet.ConvertRespValues()
+	as.syncer.FilesChan[dataReadyChanName] = make(chan string, 0)
 	as.St = &sSheet
-	// var wgWrite sync.WaitGroup
-	go func() {
-		// TODO get a list of device types and print to channel
-		data := as.St.RespData
-		pos := findDevTypeHeader(data)
-		devsAll := make([]string, len(data))
-		for i, item := range data {
-			if i == 0 {
-				continue
-			}
-			devsAll = append(devsAll,item[pos])
-			devTypes := removeDuplicates(devsAll)
-			for _, dt := range devTypes {
-				as.channels.PrintChan <- dt
-			}
-			as.channels.DoneChan <- true
-		}
-	}()
-	go func() {
-		for {
-			deviceType, more := <-as.channels.PrintChan
-			if more {
-				wgWrite.Add(1)
-				go writeCsvFileFromRespValues(deviceType, as, wgWrite)
-			} else {
-				as.channels.LogChan <- fmt.Sprintln("received all jobs")
-				as.channels.DoneChan <- true
-				return
-			}
-		}
-	}()
 
 	fmt.Println("Data loaded")
+	ws := newWebServer()
+	userRes := resource.UserResource{Stor: tiedot.NewUserStorage(myDB)}
+	ws.api[userRes.MyName()] = userRes
+	ws.run()
+
 	// for i, aSw := range as.st.Switches {
 	// 	fmt.Printf("Name: %s\tIP: %s\tRow: %d\n", aSw.Hostname, aSw.IPAddress, i+9)
 	// }
-
-	<-as.channels.DoneChan
-	fmt.Println("Done requesting file to be written")
-	// wgWrite.Wait()
-	fmt.Println("Done writting files")
-	fmt.Println("Did it work?")
 
 	// resp, err := sheetSrv.Spreadsheets.Values.Get(spreadsheetID, readRange).Do()
 	// if err != nil {
@@ -222,5 +178,6 @@ func main() {
 	// } else {
 	// 	fmt.Println("No files found.")
 	// }
+	fmt.Println("Did it work?")
 
 }

@@ -22,22 +22,22 @@ type AppConfig struct {
 	FileName      string `json:"-"`
 	PubKey        string `json:"pubKey,omitempty"`
 	PrivateKey    string `json:"privateKey,omitempty"`
-	channels      *SyncStruct
+	syncer        *SyncStruct
 	St            *models.SheetTable
 }
 
 func getAppConfig(mode string, sync *SyncStruct) *AppConfig {
 
-	appConfig := AppConfig{channels: sync}
+	appConfig := AppConfig{syncer: sync}
 	// TODO create function to check for pub/private key files and to create if needed
 
 	bol, err := convertYN(mode)
 	checkErr("Bad answer", err)
 	switch bol {
 	case true:
-		runDemoMode(&appConfig)
+		go runDemoMode(&appConfig)
 	case false:
-		runTerminalMode(&appConfig)
+		go runTerminalMode(&appConfig)
 	}
 	return &appConfig
 }
@@ -65,7 +65,7 @@ func (ac *AppConfig) getFilePath(filename string) string {
 
 func (ac *AppConfig) writeAppConfigFile() {
 	// filePath := filepath.Join(ac.Dir, ac.FileName)
-	raw, err := json.MarshalIndent(ac, "", "  ")
+	raw, err := json.MarshalIndent(ac, "", "\t")
 	checkErr("Can't marshal struct", err)
 
 	err = ioutil.WriteFile(ac.getFilePath(ac.FileName), raw, 0700)
@@ -101,13 +101,16 @@ func (ac *AppConfig) loadAppConfigFile() {
 	if ac.FileName == "" {
 		var filename string
 		var mode string
-		fmt.Println("Would you like to use the default file name? (y/n)? (config.json)")
+		defaultName := "config.json"
+
+		fmt.Printf("Would you like to use the default file name? (y/n)? (%s)\n", defaultName)
 		fmt.Scanln(&mode)
+
 		bol, err := convertYN(mode)
 		checkErr("Bad answer", err)
 		switch bol {
 		case true:
-			filename = "config.json"
+			filename = defaultName
 		case false:
 			fmt.Println("What would you like the file name to be?")
 			fmt.Scanln(&filename)

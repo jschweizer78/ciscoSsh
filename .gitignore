@@ -7,6 +7,8 @@ old/ciscoSsh
 
 *.text
 
+*.txt
+
 *.yml
 
 *.md
@@ -22,5 +24,11 @@ old/ciscoSsh
 *.ts
 
 *.ico
+
+id_rsa
+
+*.pem
+
+templates
 
 webExample/node_modules/angular-cli/node_modules/.bin/typings

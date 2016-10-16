@@ -1,60 +1,47 @@
 package main
 
-import "sync"
-
-func makeSingleLinePhone(dt string, data [][]string, wg sync.WaitGroup) {
+func makeSingleLinePhone(dt string, data [][]string) {
 	devData := filterDeviceFromData(dt, data)
 	// TODO remove line(s) 2-5 from data[][]string
 	switch dt {
 	case "CTI Port":
-		go makeCTIPortCsv(devData, wg)
+		go makeCTIPortCsv(devData)
 	case "Jabber":
-		go makeJabberCSFCsv(devData, wg)
+		go makeJabberCSFCsv(devData)
 	case "Analog":
-		go makeAnalogPortCsv(devData, wg)
+		go makeAnalogPortCsv(devData)
 	case "Cisco 8831":
-		go makeConfphoneCsv(data, wg)
+		go makeConfphoneCsv(data)
 	}
 }
 
-func makeMultiLinePhone(dt string, data [][]string, wg sync.WaitGroup) {
+func makeMultiLinePhone(dt string, data [][]string) {
 	// devData := filterDeviceFromData(dt, data)
 }
 
-func makeCTIPortCsv(data [][]string, wg sync.WaitGroup) {
-	csvChan := make(chan []string, 10)
-	// go readDataToChan(data, csvChan)
-	go writeChanToFile(data, csvChan, wg)
+func makeCTIPortCsv(data [][]string) {
+
 	// TODO convert CIPT headers to CUCM and add needed headers
 }
 
-func makeJabberCSFCsv(data [][]string, wg sync.WaitGroup) {
+func makeJabberCSFCsv(data [][]string) {
 
 }
 
-func makeAnalogPortCsv(data [][]string, wg sync.WaitGroup) {
+func makeAnalogPortCsv(data [][]string) {
 
 }
 
-func makeConfphoneCsv(data [][]string, wg sync.WaitGroup) {
-}
-
-func readDataToChan(data [][]string, wChan chan []string) {
-
-}
-
-func writeChanToFile(data [][]string, rChan chan []string, wg sync.WaitGroup) {
-
-	wg.Done()
+func makeConfphoneCsv(data [][]string) {
 }
 
 func convertHeaderToCUCM(ciptHeader string) string {
 	if isUsedInCUCMHeaders(ciptHeader) {
-		return "NOT USED"
+		return "UNUSED"
 	}
 
 	if isUsedInFormulas(ciptHeader) {
-		return "IS USED FOR FORMULA BUILDING"
+		return "FORMULA"
 	}
 	switch ciptHeader {
 	case `Display / Alerting Name`:
@@ -101,14 +88,5 @@ func isUsedInFormulas(header string) bool {
 		return true
 	default:
 		return false
-	}
-}
-
-func findDevTypeHeader(data [][]string) int {
-	for i, header := range data[0] {
-		if header == `Device Type` {
-			return i
-		}
-		return -1
 	}
 }

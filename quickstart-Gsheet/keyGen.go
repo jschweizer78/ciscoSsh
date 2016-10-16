@@ -7,6 +7,7 @@ import (
 	"encoding/pem"
 	"io/ioutil"
 	"os"
+	"sync"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -16,7 +17,18 @@ type SyncStruct struct {
 	PrintChan chan string
 	DoneChan  chan bool
 	LogChan   chan string
-	FilesChan []chan string
+	FilesChan map[string]chan string
+	Wgs       map[string]sync.WaitGroup
+}
+
+func newSyscStruct() *SyncStruct {
+	var syncStruct SyncStruct
+	syncStruct.DoneChan = make(chan bool, 5)
+	syncStruct.PrintChan = make(chan string, 5)
+	syncStruct.LogChan = make(chan string, 10)
+	syncStruct.FilesChan = make(map[string]chan string) // NOTE each channel needs to be created when filepath is determined
+	syncStruct.Wgs = make(map[string]sync.WaitGroup)
+	return &syncStruct
 }
 
 func makeDir(path string) error {

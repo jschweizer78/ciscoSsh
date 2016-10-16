@@ -9,16 +9,16 @@ import (
 
 // PersonName is an object repersenting a person's name
 type PersonName struct {
-	Given string
-	Sir   string
+	Given string `json:"first"`
+	Sir   string `json:"last"`
 }
 
 // Person is a struct repersenting a person
 type Person struct {
-	ID     string `json:"-"`
-	Name   PersonName
-	Phone  string
-	Email  string
+	ID     string     `json:"id"`
+	Name   PersonName `json:"name"`
+	Phone  string     `json:"phone"`
+	Email  string     `json:"email"`
 	exists bool
 }
 
@@ -38,12 +38,12 @@ func (p *Person) DisplayName() string {
 
 // GetID to satisfy jsonapi.MarshalIdentifier interface
 func (p *Person) GetID() string {
-	return ""
+	return p.ID
 }
 
 // SetID to satisfy jsonapi.UnmarshalIdentifier interface
 func (p *Person) SetID(id string) error {
-
+	p.ID = id
 	return nil
 }
 

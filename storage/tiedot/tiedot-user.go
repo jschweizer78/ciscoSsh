@@ -1,69 +1,87 @@
 package tiedot
 
 import (
-	"errors"
+	"encoding/json"
 	"fmt"
-	"net/http"
 
 	"github.com/HouzuoGuo/tiedot/db"
-	"github.com/HouzuoGuo/tiedot/dberr"
-	"github.com/manyminds/api2go"
-	"github.com/manyminds/api2go/examples/model"
+	"github.com/fatih/structs"
+	"github.com/jschweizer78/ciscoSsh/models"
 )
 
 // NewUserStorage initializes the storage
-func NewUserStorage() *UserStorage {
-	colName := "Users"
-	if !doesColExsit(colName) {
+func NewUserStorage(myDB *db.DB) *UserStorage {
+	colName := "users"
+	if !doesColExsit(colName, myDB) {
 		myDB.Create(colName)
 	}
-	return &UserStorage{myDB.Use(colName)}
+	return &UserStorage{Col: myDB.Use(colName)}
 }
 
 // UserStorage stores all users
 type UserStorage struct {
-	users *db.Col
+	Col *db.Col
+}
+
+// MyName returns the user map (because we need the ID as key too)
+func (s UserStorage) MyName() string {
+	return fmt.Sprint("users")
 }
 
 // GetAll returns the user map (because we need the ID as key too)
-func (s UserStorage) GetAll() *db.Col {
-	return s.users
+func (s UserStorage) GetAll() []models.User {
+	users := make([]models.User, 10)
+
+	s.Col.ForEachDoc(func(id int, doc []byte) bool {
+		var user models.User
+		err := json.Unmarshal(doc, &user)
+		if err != nil {
+			panic(err)
+		}
+		user.SetID(fmt.Sprint(id))
+		users = append(users, user)
+		return true
+	})
+	return users
 }
 
 // GetOne user
-func (s UserStorage) GetOne(id string) (model.User, error) {
-	user, err := s.GetOne(id)
+func (s UserStorage) GetOne(id string) (models.User, error) {
+	var user models.User
+	intID := convertStringtoID(id)
+	raw, err := s.Col.Read(int(intID))
 	if err != nil {
-		errMessage := fmt.Sprintf("User for id %s not found", id)
-		return model.User{}, api2go.NewHTTPError(errors.New(errMessage), errMessage, http.StatusNotFound)
+		panic(err)
 	}
+
+	err = fillStruct(&user, raw)
+	if err != nil {
+		panic(err)
+	}
+
+	user.SetID(fmt.Sprint(id))
 	return user, nil
 }
 
-// Insert a user
-func (s *UserStorage) Insert(c model.User) string {
-	id := s.Insert(c)
-	return id
-}
-
-// Delete one :(
-func (s *UserStorage) Delete(id string) error {
-	err := s.Delete(id)
+// AddOne a user
+func (s *UserStorage) AddOne(c models.User) string {
+	m := structs.Map(c)
+	idInt, err := s.Col.Insert(m)
 	if err != nil {
-		switch dberr.Type(err) {
-		case dberr.ErrorNoDoc:
-			fmt.Println("The document was already deleted")
-		default:
-			panic(err)
-		}
-	}
-	return nil
-}
-
-// Update a user
-func (s *UserStorage) Update(c model.User) error {
-	if err := s.Update(c); err != nil {
 		panic(err)
 	}
-	return nil
+	return fmt.Sprintf("%d", idInt)
+}
+
+// DeleteOne one :(
+func (s *UserStorage) DeleteOne(id string) error {
+	idInt := convertStringtoID(id)
+	return s.Col.Delete(int(idInt))
+}
+
+// UpdateOne a user
+func (s *UserStorage) UpdateOne(c models.User) error {
+	m := structs.Map(c)
+	idInt := convertStringtoID(c.GetID())
+	return s.Col.Update(idInt, m)
 }

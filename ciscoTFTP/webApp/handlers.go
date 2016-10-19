@@ -39,8 +39,3 @@ func (ar *apiResource) setResoreces() {
 
 	}
 }
-
-func (ar *apiResource) getResoreces() {
-	// resStrArr := []string{"users"}
-
-}

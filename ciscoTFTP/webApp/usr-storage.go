@@ -16,32 +16,31 @@ func newUserStorage(db *db.DB) (us *userStorage) {
 	return
 }
 
-func (sr *userStorage) AddOne(c interfaces.StorageItem) (id string) {
+func (us *userStorage) AddOne(c interfaces.StorageItem) (id string) {
+	return
+}
+
+func (us *userStorage) GetOne(id string) (item interfaces.StorageItem, err error) {
 
 	return
 }
 
-func (sr *userStorage) GetOne(id string) (item interfaces.StorageItem, err error) {
+func (us *userStorage) GetAll() (items []interfaces.StorageItem) {
 
 	return
 }
 
-func (sr *userStorage) GetAll() (items []interfaces.StorageItem) {
+func (us *userStorage) DeleteOne(id string) (err error) {
 
 	return
 }
 
-func (sr *userStorage) DeleteOne(id string) (err error) {
+func (us *userStorage) UpdateOne(c interfaces.StorageItem) (err error) {
 
 	return
 }
 
-func (sr *userStorage) UpdateOne(c interfaces.StorageItem) (err error) {
-
-	return
-}
-
-func (sr *userStorage) MyName() (name string) {
+func (us *userStorage) MyName() (name string) {
 
 	return
 }

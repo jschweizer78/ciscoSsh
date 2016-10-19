@@ -15,6 +15,8 @@ old/ciscoSsh
 
 *.html
 
+*.css
+
 *.png
 
 *.log
@@ -30,5 +32,10 @@ id_rsa
 *.pem
 
 templates
+
+node_modules
+
+typings
+*.js.map
 
 webExample/node_modules/angular-cli/node_modules/.bin/typings

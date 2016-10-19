@@ -18,8 +18,7 @@ import (
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	// "google.golang.org/api/drive/v2"
-	"github.com/jschweizer78/ciscoSsh/resource"
-	"github.com/jschweizer78/ciscoSsh/storage/tiedot"
+
 	"google.golang.org/api/drive/v2"
 	"google.golang.org/api/sheets/v4"
 )
@@ -136,8 +135,8 @@ func main() {
 	// parents, err := fileCall.Fields("parents").Do()
 	// checkErr("Problem with call", err)
 	// fmt.Println(parents)
-	myDbName := "MyDatabase"
-	myDB := tiedot.NewStorageDB(filepath.Join(as.Dir, myDbName))
+	// myDbName := "MyDatabase"
+	// myDB := tiedot.NewStorageDB(filepath.Join(as.Dir, myDbName))
 	// userStor := tiedot.NewUserStorage(myDB)
 	sSheet := models.NewSheetTable(sheetSrv)
 	sSheet.SetDataLocation(as.SpreadsheetID, as.Site, as.DataRange, as.OffSet)
@@ -149,8 +148,8 @@ func main() {
 
 	fmt.Println("Data loaded")
 	ws := newWebServer()
-	userRes := resource.UserResource{Stor: tiedot.NewUserStorage(myDB)}
-	ws.api[userRes.MyName()] = userRes
+	// userRes := resource.UserResource{Stor: tiedot.NewUserStorage(myDB)}
+	// ws.api[userRes.MyName()] = userRes
 	ws.run()
 
 	// for i, aSw := range as.st.Switches {

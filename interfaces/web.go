@@ -1,7 +1,7 @@
 package interfaces
 
 // APIResourcer used to abstract the storage
-import "gopkg.in/gin-gonic/gin.v1"
+import "github.com/gin-gonic/gin"
 
 // APIResourcer standard web REST
 type APIResourcer interface {

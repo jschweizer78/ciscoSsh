@@ -76,26 +76,22 @@ func getStandardRings(subFolder, serverIP string, mode int) {
 		fmt.Println("Invalid mode selected")
 		os.Exit(1)
 	}
-	getTftpFile(ringListName, subFolder, serverIP, results)
+	go getTftpFile(ringListName, subFolder, serverIP, results)
 	path2 := filepath.Join("./", subFolder, ringListName)
-	rings := readRingListFile(path2)
 	result := <-results
+	rings := readRingListFile(path2)
 	fmt.Println(result)
 	for _, ring := range rings.Ring {
 		// wg.Add(1)
-		go func(ring Ring, folder, serverIP string, results chan string) {
-			getTftpFile(ring.FileName, folder, serverIP, results)
-			// wg.Done()
-		}(ring, subFolder, serverIP, results)
-
+		go getTftpFile(ring.FileName, subFolder, serverIP, results)
+		// wg.Done()
 	}
 	for i := 0; i < len(rings.Ring); i++ {
-		select {
-		case res := <-results:
-			fmt.Println(res)
-		}
+		res := <-results
+		fmt.Println(res)
 	}
 	// wg.Wait()
+	close(results)
 }
 
 func createFile(path string) (*os.File, error) {

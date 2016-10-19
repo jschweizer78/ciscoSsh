@@ -5,7 +5,7 @@ import (
 
 	"github.com/jschweizer78/ciscoSsh/interfaces"
 
-	"gopkg.in/gin-gonic/gin.v1"
+	"github.com/gin-gonic/gin"
 )
 
 type webServer struct {

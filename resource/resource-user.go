@@ -58,7 +58,7 @@ func (ur UserResource) UpdateOne(c *gin.Context) {
 		panic(err)
 	}
 	obj.SetID(id)
-	err := ur.Stor.UpdateOne(obj)
+	err = ur.Stor.UpdateOne(obj)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err})
 	}

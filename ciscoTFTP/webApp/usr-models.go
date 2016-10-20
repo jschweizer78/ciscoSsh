@@ -13,3 +13,11 @@ func (usr *user) SetID(id string) (err error) {
 	usr.ID = id
 	return
 }
+func (usr *user) GetName() string {
+	return usr.Name
+}
+
+func (usr *user) SetName(name string) (err error) {
+	usr.Name = name
+	return
+}

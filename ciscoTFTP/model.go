@@ -12,3 +12,8 @@ type Ring struct {
 type CiscoIPPhoneRingList struct {
 	Ring []Ring
 }
+
+type tInPut struct {
+	kind int
+	ver  bool
+}

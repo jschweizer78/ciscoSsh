@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
@@ -28,16 +29,13 @@ func getTftpFile(fileName, subFolder, serverIP string, result chan string) {
 
 	c, err := tftp.NewClient(serverString)
 	check(err)
-
 	// fmt.Println("connected to ", serverString)
+
 	wt, err := c.Receive(fileName, "octet")
 	check(err)
-
 	// fmt.Println("file recived ")
-	path := filepath.Join(subFolder, fileName)
 
-	currentPath := "./" + path
-	// fmt.Println(currentPath)
+	currentPath := filepath.Join("./", subFolder, fileName)
 	file, err := os.Create(currentPath)
 	check(err)
 
@@ -52,7 +50,7 @@ func getTftpFile(fileName, subFolder, serverIP string, result chan string) {
 
 func check(err error) {
 	if err != nil {
-		panic(err)
+		panic(err.Error())
 	}
 }
 
@@ -60,11 +58,17 @@ func getStandardRings(subFolder, serverIP string, mode int) {
 	// var wg sync.WaitGroup
 	standardRingListName := "Ringlist.xml"
 	distinctiveRingListName := "DistinctiveRingList.xml"
+	signedStanRLName := "Ringlist.xml.sgn"
+	signedDistRLName := "DistinctiveRingList.xml.sgn"
 	var ringListName string
 	results := make(chan string, 10) // we’ll write results into the buffered channel of strings
 
 	perm := os.FileMode(0777)
-	err := os.Mkdir(filepath.Join("./", subFolder), perm)
+	sigPath := filepath.Join("./", subFolder, "signed")
+	unsigPath := filepath.Join("./", subFolder, "unsigned")
+	err := os.MkdirAll(sigPath, perm)
+	check(err)
+	err = os.MkdirAll(unsigPath, perm)
 	check(err)
 
 	switch mode {
@@ -72,24 +76,42 @@ func getStandardRings(subFolder, serverIP string, mode int) {
 		ringListName = standardRingListName
 	case 2:
 		ringListName = distinctiveRingListName
+	case 3:
+		ringListName = signedStanRLName
+	case 4:
+		ringListName = signedDistRLName
 	default:
 		fmt.Println("Invalid mode selected")
 		os.Exit(1)
 	}
+
 	go getTftpFile(ringListName, subFolder, serverIP, results)
-	path2 := filepath.Join("./", subFolder, ringListName)
+	var buffer bytes.Buffer
+
 	result := <-results
-	rings := readRingListFile(path2)
+	buffer.WriteString(fmt.Sprintf("%s\n", result))
+
+	rings := readRingListFile(filepath.Join("./", subFolder, ringListName))
 	fmt.Println(result)
 	for _, ring := range rings.Ring {
 		// wg.Add(1)
-		go getTftpFile(ring.FileName, subFolder, serverIP, results)
+		go getTftpFile(ring.FileName, unsigPath, serverIP, results)
 		// wg.Done()
 	}
+
+	// if mode == 3 || mode == 4 {
+	//
+	// }
+
 	for i := 0; i < len(rings.Ring); i++ {
 		res := <-results
 		fmt.Println(res)
+		// logMsg := fmt.Sprintf("%s\n", res)
+		buffer.WriteString(fmt.Sprintf("%s\n", res))
 	}
+	logFile, err := os.Create("./log.txt")
+	check(err)
+	logFile.WriteString(buffer.String())
 	// wg.Wait()
 	close(results)
 }
@@ -97,6 +119,8 @@ func getStandardRings(subFolder, serverIP string, mode int) {
 func createFile(path string) (*os.File, error) {
 	return os.Create(path)
 }
+
+// TODO make it so we can write to a log file whenever we need. Not just expect one set.
 func writeToLog(file *os.File, msg string, offSet int64) error {
 	bs, err := json.Marshal(&msg)
 	check(err)

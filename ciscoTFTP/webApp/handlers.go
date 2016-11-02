@@ -9,14 +9,12 @@ import (
 )
 
 type apiResource struct {
-	stores map[string]interfaces.Storager
 	res    map[string]interfaces.APIResourcer
 	engine *gin.Engine
 }
 
 func newAPIRes(engine *gin.Engine) *apiResource {
 	return &apiResource{
-		stores: make(map[string]interfaces.Storager),
 		res:    make(map[string]interfaces.APIResourcer),
 		engine: engine,
 	}

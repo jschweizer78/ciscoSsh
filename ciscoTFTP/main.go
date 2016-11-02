@@ -10,8 +10,8 @@ import (
 func main() {
 	var subFolder string
 	var serverIP string
-
 	var answerRunType int
+	var answerVer string
 
 	fmt.Println("What would you like the subfolder name to be?")
 	fmt.Scan(&subFolder)
@@ -26,11 +26,16 @@ Please choose one of the following:
 3 Image download`)
 	fmt.Scan(&answerRunType)
 
+	fmt.Println(`Is the version higher then 11.5?`)
+	fmt.Scan(&answerVer)
+
 	switch answerRunType {
 	case 1, 2:
 		getStandardRings(subFolder, serverIP, answerRunType)
 	case 3:
 		fmt.Println("Under construction")
+	case 98:
+		connect(serverIP)
 	case 99:
 		fmt.Println("Thanks for playing")
 		os.Exit(1)

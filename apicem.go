@@ -17,10 +17,10 @@ func main() {
 	client := &http.Client{Transport: tr}
 	apicEMClient := apicem.NewClient(client)
 	user := &apicem.User{
-		Username: "devnetuser",
-		Password: "Cisco123!",
+		Username: "",
+		Password: "",
 	}
-	apicEMClient.BaseURL, _ = url.Parse("https://sandboxapic.cisco.com")
+	apicEMClient.BaseURL, _ = url.Parse("<URL>")
 
 	fmt.Println("==========================================")
 
